@@ -156,6 +156,10 @@ DEFAULT_PROJECTS = [
 
 if "page" not in st.session_state:
     st.session_state.page = "Home"
+    
+if "page_radio" not in st.session_state:
+    st.session_state.page_radio = st.session_state.page
+
 
 if "user" not in st.session_state:
     st.session_state.user = None
@@ -176,8 +180,16 @@ if "chat_history" not in st.session_state:
     ]
 
 
+
 def navigate(page):
     st.session_state.page = page
+    st.session_state.page_radio = page
+    
+def navigate_to_service(service):
+    st.session_state.selected_service = service
+    navigate("Contact Us")
+
+
 
 
 # ============================================================
@@ -241,10 +253,13 @@ with st.sidebar:
             f"Role: {st.session_state.user['role'].title()}"
         )
 
-        if st.button("Sign Out", use_container_width=True):
-            st.session_state.user = None
-            st.session_state.page = "Home"
-            st.rerun()
+        
+if st.button("Sign Out", use_container_width=True):
+    st.session_state.user = None
+    st.session_state.page = "Home"
+    st.session_state.page_radio = "Home"
+    st.rerun()
+
 
     st.divider()
     st.caption("Demo application")
@@ -259,7 +274,7 @@ st.markdown("## 🚀 NovaTech Solutions")
 selected_page = st.radio(
     "Navigate to a page",
     PAGES,
-    key="page",
+    key="page_radio",
     horizontal=True,
     label_visibility="collapsed",
 )
@@ -293,39 +308,42 @@ if selected_page == "Home":
         st.write(
             "Explore AI applications, chatbots and intelligent agents."
         )
-        if st.button(
-            "Explore AI Services",
-            key="home_ai",
-            use_container_width=True,
-        ):
-            navigate("Services")
-            st.rerun()
+       st.button(
+    "Explore AI Services",
+    key="home_ai",
+    use_container_width=True,
+    on_click=navigate,
+    args=("Services",),
+    )
 
     with col2:
         st.markdown("### 💻 Modern Software")
         st.write(
             "Discover web applications and custom software solutions."
         )
-        if st.button(
-            "View Our Projects",
-            key="home_projects",
-            use_container_width=True,
-        ):
-            navigate("Portfolio")
-            st.rerun()
+       
+      st.button(
+    "View Our Projects",
+    key="home_projects",
+    use_container_width=True,
+    on_click=navigate,
+    args=("Portfolio",),
+)
 
     with col3:
         st.markdown("### 📩 Start a Project")
         st.write(
             "Tell us about your idea using our project inquiry form."
         )
-        if st.button(
-            "Contact Us",
-            key="home_contact",
-            use_container_width=True,
-        ):
-            navigate("Contact Us")
-            st.rerun()
+      
+st.button(
+    "Contact Us",
+    key="home_contact",
+    use_container_width=True,
+    on_click=navigate,
+    args=("Contact Us",),
+)
+
 
     st.divider()
     st.markdown("### Why Choose NovaTech?")
@@ -364,14 +382,19 @@ if selected_page == "Home":
     for i, page_name in enumerate(
         ["About Us", "Services", "Portfolio", "AI Assistant"]
     ):
-        with shortcuts[i]:
-            if st.button(
-                page_name,
-                key=f"shortcut_{i}",
-                use_container_width=True,
-            ):
-                navigate(page_name)
-                st.rerun()
+       
+for i, page_name in enumerate(
+    ["About Us", "Services", "Portfolio", "AI Assistant"]
+):
+    with shortcuts[i]:
+        st.button(
+            page_name,
+            key=f"shortcut_{i}",
+            use_container_width=True,
+            on_click=navigate,
+            args=(page_name,),
+        )
+
 
 
 # ============================================================
@@ -436,9 +459,13 @@ elif selected_page == "About Us":
         "- UI/UX and workflow automation"
     )
 
-    if st.button("Explore Our Services"):
-        navigate("Services")
-        st.rerun()
+    
+st.button(
+    "Explore Our Services",
+    on_click=navigate,
+    args=("Services",),
+)
+
 
 
 # ============================================================
@@ -458,13 +485,13 @@ elif selected_page == "Services":
             st.subheader(f"{index}. {name}")
             st.write(description)
 
-            if st.button(
-                "Enquire About This Service",
-                key=f"service_{index}",
-            ):
-                st.session_state.selected_service = name
-                navigate("Contact Us")
-                st.rerun()
+           
+st.button(
+    "Enquire About This Service",
+    key=f"service_{index}",
+    on_click=navigate_to_service,
+    args=(name,),
+)
 
 
 # ============================================================
@@ -515,9 +542,12 @@ elif selected_page == "Portfolio":
                     project["link"],
                 )
 
-    if st.button("Discuss a Similar Project"):
-        navigate("Contact Us")
-        st.rerun()
+   
+st.button(
+    "Discuss a Similar Project",
+    on_click=navigate,
+    args=("Contact Us",),
+)
 
 
 # ============================================================
@@ -736,9 +766,12 @@ elif selected_page == "Client Dashboard":
                 "No inquiries found. Submit one from Contact Us."
             )
 
-        if st.button("Create a New Inquiry"):
-            navigate("Contact Us")
-            st.rerun()
+        
+st.button(
+    "Create a New Inquiry",
+    on_click=navigate,
+    args=("Contact Us",),
+)
 
 
 # ============================================================
