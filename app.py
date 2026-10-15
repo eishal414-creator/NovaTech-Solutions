@@ -689,15 +689,17 @@ elif selected_page == "AI Assistant":
     st.title("💬 NovaTech AI Assistant")
 
     st.write(
-        "Ask questions about NovaTech services in English or Roman Urdu."
+        "Ask me anything about NovaTech Solutions. "
+        "I can reply in English, Roman Urdu, or Urdu."
     )
 
-    # API key is loaded securely from Streamlit Secrets
+    # Load API key securely from Streamlit Secrets
     try:
-        api_key = st.secrets["GEMINI_API_KEY"]
+        api_key = st.secrets.get("GEMINI_API_KEY", "").strip()
     except Exception:
         api_key = ""
 
+    # Display previous messages
     for role, message in st.session_state.chat_history:
         with st.chat_message(role):
             st.write(message)
@@ -712,42 +714,79 @@ elif selected_page == "AI Assistant":
 
         if not GEMINI_AVAILABLE:
             answer = (
-                "Gemini SDK install nahi hai. Requirements mein "
-                "google-genai add karein."
+                "The Gemini SDK is missing. Please add "
+                "google-genai to requirements.txt and redeploy."
             )
 
         elif not api_key:
             answer = (
-                "Gemini API key configure nahi hai. "
-                "Admin ko Streamlit Secrets check karna hoga."
+                "The AI assistant is not configured yet. "
+                "Please contact the administrator."
             )
 
         else:
             try:
-                client = genai.Client(api_key=api_key.strip())
+                client = genai.Client(api_key=api_key)
 
                 response = client.models.generate_content(
                     model="gemini-2.5-flash",
-                    contents=(
-                        "You are the helpful assistant for NovaTech "
-                        "Solutions, a demonstration AI and software "
-                        "company. Respond in the language used by "
-                        "the user, including Roman Urdu when appropriate. "
-                        "Do not invent company achievements. "
-                        "If you do not know something, say so.\n\n"
-                        f"User question: {prompt}"
-                    ),
+                    contents=[
+                        {
+                            "role": "user",
+                            "parts": [
+                                {
+                                    "text": (
+                                        "You are NovaTech Solutions' "
+                                        "friendly AI assistant.\n\n"
+
+                                        "LANGUAGE RULES — MUST FOLLOW:\n"
+                                        "1. If the user writes in English, "
+                                        "reply entirely in English.\n"
+                                        "2. If the user writes in Roman Urdu "
+                                        "(Urdu written using English letters), "
+                                        "reply in natural Roman Urdu.\n"
+                                        "3. If the user writes in Urdu script, "
+                                        "reply in Urdu script.\n"
+                                        "4. Do not answer in English when "
+                                        "the user asks in Roman Urdu or Urdu.\n"
+                                        "5. Follow the language of the latest "
+                                        "user message.\n\n"
+
+                                        "PERSONALITY AND ACCURACY:\n"
+                                        "- Be friendly, clear, and helpful.\n"
+                                        "- Keep answers simple and relevant.\n"
+                                        "- Greet users with 'Hello!' when "
+                                        "a greeting is appropriate.\n"
+                                        "- Do not use 'Assalamu-Alaikum' "
+                                        "as the default greeting.\n"
+                                        "- You help with NovaTech Solutions, "
+                                        "AI, software, and general questions.\n"
+                                        "- Never invent company achievements "
+                                        "or claim unverified facts.\n\n"
+
+                                        f"User's message:\n{prompt}"
+                                    )
+                                }
+                            ]
+                        }
+                    ],
                 )
 
                 answer = (
-                    response.text
-                    or "The AI did not return a text response."
+                    response.text.strip()
+                    if response.text
+                    else "Sorry, I could not generate a response. "
+                         "Please try asking again."
                 )
 
-            except Exception:
+            except Exception as e:
+                # Show the error so the administrator can diagnose it.
+                st.error(
+                    f"Gemini error: {type(e).__name__}: {e}"
+                )
                 answer = (
-                    "AI response nahi mil saka. Admin API key, "
-                    "model access aur API quota check kare."
+                    "Sorry, I could not get a response right now. "
+                    "Please try again in a moment."
                 )
 
         st.session_state.chat_history.append(
@@ -764,12 +803,13 @@ elif selected_page == "AI Assistant":
             chat_history=[
                 (
                     "assistant",
-                    "Assalam-o-Alaikum! Welcome to NovaTech Solutions. "
+                    "Hello! Welcome to NovaTech Solutions. "
                     "How can I help you today?",
                 )
             ]
         ),
     )
+
 
 
 # ============================================================
