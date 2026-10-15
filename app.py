@@ -692,12 +692,11 @@ elif selected_page == "AI Assistant":
         "Ask questions about NovaTech services in English or Roman Urdu."
     )
 
-    api_key = st.text_input(
-        "Gemini API key",
-        type="password",
-        value=os.environ.get("GEMINI_API_KEY", ""),
-        help="Keep your API key private.",
-    )
+    # API key is loaded securely from Streamlit Secrets
+    try:
+        api_key = st.secrets["GEMINI_API_KEY"]
+    except Exception:
+        api_key = ""
 
     for role, message in st.session_state.chat_history:
         with st.chat_message(role):
@@ -713,13 +712,14 @@ elif selected_page == "AI Assistant":
 
         if not GEMINI_AVAILABLE:
             answer = (
-                "Gemini SDK install nahi hai. Terminal mein "
-                "python -m pip install google-genai run karein."
+                "Gemini SDK install nahi hai. Requirements mein "
+                "google-genai add karein."
             )
 
-        elif not api_key.strip():
+        elif not api_key:
             answer = (
-                "Live AI response ke liye apni Gemini API key enter karein."
+                "Gemini API key configure nahi hai. "
+                "Admin ko Streamlit Secrets check karna hoga."
             )
 
         else:
@@ -746,8 +746,8 @@ elif selected_page == "AI Assistant":
 
             except Exception:
                 answer = (
-                    "AI response nahi mil saka. API key, internet "
-                    "connection, model access aur API quota check karein."
+                    "AI response nahi mil saka. Admin API key, "
+                    "model access aur API quota check kare."
                 )
 
         st.session_state.chat_history.append(
