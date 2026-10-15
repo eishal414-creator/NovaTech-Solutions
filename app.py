@@ -13,7 +13,7 @@ except ImportError:
 
 
 # ============================================================
-# PAGE CONFIGURATION
+# 1. PAGE CONFIGURATION
 # ============================================================
 
 st.set_page_config(
@@ -25,7 +25,7 @@ st.set_page_config(
 
 
 # ============================================================
-# STYLING
+# 2. CUSTOM STYLING
 # ============================================================
 
 st.markdown(
@@ -37,16 +37,16 @@ st.markdown(
     }
 
     .hero {
-        padding: 40px 25px;
+        padding: 38px 24px;
         border-radius: 18px;
         background: linear-gradient(120deg, #312e81, #6d28d9);
         text-align: center;
-        margin-bottom: 25px;
+        margin-bottom: 24px;
     }
 
     .hero h1 {
         color: white;
-        font-size: 42px;
+        font-size: 40px;
     }
 
     .hero p {
@@ -59,12 +59,9 @@ st.markdown(
         border: 1px solid #334155;
         border-radius: 14px;
         padding: 20px;
-        margin: 10px 0;
+        margin-bottom: 12px;
     }
 
-    .muted {
-        color: #cbd5e1;
-    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -72,7 +69,7 @@ st.markdown(
 
 
 # ============================================================
-# INITIAL DATA
+# 3. PAGE DATA
 # ============================================================
 
 PAGES = [
@@ -137,63 +134,76 @@ DEFAULT_PROJECTS = [
         "title": "MediBot AI Assistant",
         "category": "AI Chatbots",
         "tech": "Python, FastAPI, Gemini API",
-        "description": (
-            "A demonstration healthcare assistant concept."
-        ),
+        "description": "A demonstration healthcare assistant concept.",
         "link": "",
     },
     {
         "title": "SupplyChain Sync",
         "category": "Web Applications",
         "tech": "React, Node.js, PostgreSQL",
-        "description": (
-            "A demonstration supply-chain tracking dashboard."
-        ),
+        "description": "A demonstration supply-chain tracking dashboard.",
         "link": "",
     },
 ]
 
 
-if "page" not in st.session_state:
-    st.session_state.page = "Home"
-    
-if "page_radio" not in st.session_state:
-    st.session_state.page_radio = st.session_state.page
+# ============================================================
+# 4. INITIALIZE SESSION STATE
+# ============================================================
 
-
-if "user" not in st.session_state:
-    st.session_state.user = None
-
-if "inquiries" not in st.session_state:
-    st.session_state.inquiries = []
-
-if "projects" not in st.session_state:
-    st.session_state.projects = DEFAULT_PROJECTS.copy()
-
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = [
+defaults = {
+    "page": "Home",
+    "user": None,
+    "inquiries": [],
+    "projects": [project.copy() for project in DEFAULT_PROJECTS],
+    "selected_service": SERVICES[0][0],
+    "chat_history": [
         (
             "assistant",
             "Assalam-o-Alaikum! Welcome to NovaTech Solutions. "
             "How can I help you today?",
         )
-    ]
+    ],
+}
+
+for key, value in defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
+
+if "page_radio" not in st.session_state:
+    st.session_state.page_radio = st.session_state.page
 
 
+# ============================================================
+# 5. NAVIGATION FUNCTIONS
+# ============================================================
 
 def navigate(page):
-    st.session_state.page = page
-    st.session_state.page_radio = page
-    
+    """Navigate to a page using the radio widget state."""
+    if page in PAGES:
+        st.session_state.page = page
+        st.session_state.page_radio = page
+
+
+def sync_page_from_radio():
+    """Save the page selected from the navigation radio."""
+    st.session_state.page = st.session_state.page_radio
+
+
 def navigate_to_service(service):
+    """Select a service and open the contact form."""
     st.session_state.selected_service = service
     navigate("Contact Us")
 
 
+def sign_out():
+    """Sign out and return to Home."""
+    st.session_state.user = None
+    navigate("Home")
 
 
 # ============================================================
-# SIDEBAR: BRAND AND LOGIN
+# 6. SIDEBAR: BRAND AND ACCOUNT
 # ============================================================
 
 with st.sidebar:
@@ -204,17 +214,19 @@ with st.sidebar:
     st.markdown("### Account")
 
     if st.session_state.user is None:
-        login_email = st.text_input(
-            "Email address",
-            key="login_email",
-        )
-        login_password = st.text_input(
-            "Password",
-            type="password",
-            key="login_password",
-        )
+        with st.form("login_form"):
+            login_email = st.text_input("Email address")
+            login_password = st.text_input(
+                "Password",
+                type="password",
+            )
 
-        if st.button("Sign In", use_container_width=True):
+            login_submit = st.form_submit_button(
+                "Sign In",
+                use_container_width=True,
+            )
+
+        if login_submit:
             email = login_email.strip().lower()
 
             if (
@@ -225,10 +237,15 @@ with st.sidebar:
                     "email": email,
                     "role": "admin",
                 }
-                st.success("Admin signed in.")
+                st.success("Demo admin signed in.")
                 st.rerun()
 
-            elif email and "@" in email and login_password:
+            elif (
+                email
+                and "@" in email
+                and "." in email.split("@")[-1]
+                and login_password.strip()
+            ):
                 st.session_state.user = {
                     "email": email,
                     "role": "client",
@@ -237,13 +254,11 @@ with st.sidebar:
                 st.rerun()
 
             else:
-                st.error(
-                    "Enter a valid email and a password."
-                )
+                st.error("Enter a valid email and password.")
 
-        st.caption(
-            "Demo admin: admin@novatech.com / admin123"
-        )
+        st.caption("Demo admin login:")
+        st.caption("admin@novatech.com")
+        st.caption("Password: admin123")
 
     else:
         st.write(
@@ -253,37 +268,50 @@ with st.sidebar:
             f"Role: {st.session_state.user['role'].title()}"
         )
 
-        
-if st.button("Sign Out", use_container_width=True):
-    st.session_state.user = None
-    st.session_state.page = "Home"
-    st.session_state.page_radio = "Home"
-    st.rerun()
-
+        st.button(
+            "Sign Out",
+            use_container_width=True,
+            on_click=sign_out,
+        )
 
     st.divider()
-    st.caption("Demo application")
+    st.markdown("### Quick Navigation")
+
+    for page_name in PAGES:
+        st.button(
+            page_name,
+            key=f"sidebar_{page_name}",
+            use_container_width=True,
+            on_click=navigate,
+            args=(page_name,),
+        )
+
+    st.divider()
+    st.caption("NovaTech Solutions demo application")
 
 
 # ============================================================
-# MAIN NAVIGATION
+# 7. MAIN NAVIGATION
 # ============================================================
 
 st.markdown("## 🚀 NovaTech Solutions")
 
-selected_page = st.radio(
+st.radio(
     "Navigate to a page",
     PAGES,
     key="page_radio",
     horizontal=True,
     label_visibility="collapsed",
+    on_change=sync_page_from_radio,
 )
+
+selected_page = st.session_state.page_radio
 
 st.divider()
 
 
 # ============================================================
-# HOME PAGE
+# 8. HOME PAGE
 # ============================================================
 
 if selected_page == "Home":
@@ -308,97 +336,98 @@ if selected_page == "Home":
         st.write(
             "Explore AI applications, chatbots and intelligent agents."
         )
-       st.button(
-    "Explore AI Services",
-    key="home_ai",
-    use_container_width=True,
-    on_click=navigate,
-    args=("Services",),
-    )
+        st.button(
+            "Explore AI Services",
+            key="home_ai",
+            use_container_width=True,
+            on_click=navigate,
+            args=("Services",),
+        )
 
     with col2:
         st.markdown("### 💻 Modern Software")
         st.write(
             "Discover web applications and custom software solutions."
         )
-       
-      st.button(
-    "View Our Projects",
-    key="home_projects",
-    use_container_width=True,
-    on_click=navigate,
-    args=("Portfolio",),
-)
+        st.button(
+            "View Our Projects",
+            key="home_projects",
+            use_container_width=True,
+            on_click=navigate,
+            args=("Portfolio",),
+        )
 
     with col3:
         st.markdown("### 📩 Start a Project")
         st.write(
             "Tell us about your idea using our project inquiry form."
         )
-      
-st.button(
-    "Contact Us",
-    key="home_contact",
-    use_container_width=True,
-    on_click=navigate,
-    args=("Contact Us",),
-)
-
+        st.button(
+            "Contact Us",
+            key="home_contact",
+            use_container_width=True,
+            on_click=navigate,
+            args=("Contact Us",),
+        )
 
     st.divider()
     st.markdown("### Why Choose NovaTech?")
 
-    a, b, c = st.columns(3)
+    col_a, col_b, col_c = st.columns(3)
 
-    with a:
+    with col_a:
         st.markdown(
-            '<div class="card"><h3>AI-First</h3>'
-            '<p class="muted">Intelligent solutions for real needs.</p>'
-            '</div>',
+            """
+            <div class="card">
+                <h3>AI-First</h3>
+                <p>Intelligent solutions for real needs.</p>
+            </div>
+            """,
             unsafe_allow_html=True,
         )
 
-    with b:
+    with col_b:
         st.markdown(
-            '<div class="card"><h3>Modern Technology</h3>'
-            '<p class="muted">Modern tools and practical applications.</p>'
-            '</div>',
+            """
+            <div class="card">
+                <h3>Modern Technology</h3>
+                <p>Modern tools and practical applications.</p>
+            </div>
+            """,
             unsafe_allow_html=True,
         )
 
-    with c:
+    with col_c:
         st.markdown(
-            '<div class="card"><h3>Customer Focus</h3>'
-            '<p class="muted">Solutions designed around your goals.</p>'
-            '</div>',
+            """
+            <div class="card">
+                <h3>Customer Focus</h3>
+                <p>Solutions designed around your goals.</p>
+            </div>
+            """,
             unsafe_allow_html=True,
         )
 
     st.divider()
     st.markdown("### Explore More")
 
-    shortcuts = st.columns(4)
+    shortcut_cols = st.columns(4)
 
-    for i, page_name in enumerate(
+    for index, page_name in enumerate(
         ["About Us", "Services", "Portfolio", "AI Assistant"]
     ):
-       
-for i, page_name in enumerate(
-    ["About Us", "Services", "Portfolio", "AI Assistant"]
-):
-    with shortcuts[i]:
-        st.button(
-            page_name,
-            key=f"shortcut_{i}",
-            use_container_width=True,
-            on_click=navigate,
-            args=(page_name,),
-        )
-
+        with shortcut_cols[index]:
+            st.button(
+                page_name,
+                key=f"shortcut_{index}",
+                use_container_width=True,
+                on_click=navigate,
+                args=(page_name,),
+            )
 
 
 # ============================================================
-# ABOUT US PAGE
+# 9. ABOUT US PAGE
 # ============================================================
 
 elif selected_page == "About Us":
@@ -441,17 +470,16 @@ elif selected_page == "About Us":
             unsafe_allow_html=True,
         )
 
-    st.markdown("### Our Approach")
+    st.subheader("Our Approach")
 
     st.write(
-        "We focus on understanding requirements, planning the "
-        "solution, developing useful features and improving the "
-        "user experience."
+        "We understand requirements, plan the solution, develop "
+        "useful features and improve the user experience."
     )
 
-    st.markdown("### Technology Areas")
+    st.subheader("Technology Areas")
 
-    st.write(
+    st.markdown(
         "- Python and Streamlit\n"
         "- AI APIs and intelligent agents\n"
         "- Web application development\n"
@@ -459,17 +487,15 @@ elif selected_page == "About Us":
         "- UI/UX and workflow automation"
     )
 
-    
-st.button(
-    "Explore Our Services",
-    on_click=navigate,
-    args=("Services",),
-)
-
+    st.button(
+        "Explore Our Services",
+        on_click=navigate,
+        args=("Services",),
+    )
 
 
 # ============================================================
-# SERVICES PAGE
+# 10. SERVICES PAGE
 # ============================================================
 
 elif selected_page == "Services":
@@ -485,17 +511,16 @@ elif selected_page == "Services":
             st.subheader(f"{index}. {name}")
             st.write(description)
 
-           
-st.button(
-    "Enquire About This Service",
-    key=f"service_{index}",
-    on_click=navigate_to_service,
-    args=(name,),
-)
+            st.button(
+                "Enquire About This Service",
+                key=f"service_{index}",
+                on_click=navigate_to_service,
+                args=(name,),
+            )
 
 
 # ============================================================
-# PORTFOLIO PAGE
+# 11. PORTFOLIO PAGE
 # ============================================================
 
 elif selected_page == "Portfolio":
@@ -503,8 +528,8 @@ elif selected_page == "Portfolio":
     st.title("Our Portfolio")
 
     st.write(
-        "The following are sample demonstration projects, "
-        "not verified client deliveries."
+        "These are sample demonstration projects, not verified "
+        "client deliveries."
     )
 
     categories = [
@@ -517,6 +542,7 @@ elif selected_page == "Portfolio":
     category = st.selectbox(
         "Filter projects",
         categories,
+        key="portfolio_category",
     )
 
     visible_projects = [
@@ -529,29 +555,29 @@ elif selected_page == "Portfolio":
     if not visible_projects:
         st.info("No projects match this category.")
 
-    for project in visible_projects:
+    for index, project in enumerate(visible_projects):
         with st.container(border=True):
             st.subheader(project["title"])
             st.caption(project["category"])
-            st.write("**Technology:**", project["tech"])
+            st.write(f"**Technology:** {project['tech']}")
             st.write(project["description"])
 
             if project.get("link"):
                 st.link_button(
                     "Open Project",
                     project["link"],
+                    key=f"project_link_{index}",
                 )
 
-   
-st.button(
-    "Discuss a Similar Project",
-    on_click=navigate,
-    args=("Contact Us",),
-)
+    st.button(
+        "Discuss a Similar Project",
+        on_click=navigate,
+        args=("Contact Us",),
+    )
 
 
 # ============================================================
-# CONTACT US PAGE
+# 12. CONTACT US PAGE
 # ============================================================
 
 elif selected_page == "Contact Us":
@@ -559,7 +585,7 @@ elif selected_page == "Contact Us":
     st.title("Let's Discuss Your Project")
 
     st.write(
-        "Complete the form below to create a project inquiry."
+        "Complete this form to create a project inquiry."
     )
 
     service_options = [item[0] for item in SERVICES]
@@ -605,41 +631,57 @@ elif selected_page == "Contact Us":
         )
 
     if submitted:
+        clean_email = email.strip().lower()
+
         if (
             not name.strip()
-            or "@" not in email
+            or "@" not in clean_email
+            or "." not in clean_email.split("@")[-1]
             or not description.strip()
         ):
             st.error(
-                "Please enter your name, a valid email "
-                "and your project description."
+                "Enter your name, a valid email address and "
+                "your project description."
             )
 
         else:
+            next_id = max(
+                [
+                    item["id"]
+                    for item in st.session_state.inquiries
+                ],
+                default=0,
+            ) + 1
+
             inquiry = {
-                "id": len(st.session_state.inquiries) + 1,
+                "id": next_id,
                 "name": name.strip(),
-                "email": email.strip().lower(),
+                "email": clean_email,
                 "phone": phone.strip(),
                 "company": company.strip(),
                 "service": service,
                 "budget": budget,
                 "description": description.strip(),
                 "status": "Inquiry Received",
-                "date": str(datetime.now().date()),
+                "date": datetime.now().strftime(
+                    "%Y-%m-%d %H:%M"
+                ),
             }
 
             st.session_state.inquiries.append(inquiry)
+            st.session_state.selected_service = service
 
             st.success(
                 "Your inquiry has been recorded in this demo session."
             )
-
-            st.session_state.selected_service = service
+            st.info(
+                "You can view the inquiry in the appropriate "
+                "dashboard while this session data remains available."
+            )
 
 
 # ============================================================
-# AI ASSISTANT PAGE
+# 13. AI ASSISTANT PAGE
 # ============================================================
 
 elif selected_page == "AI Assistant":
@@ -647,14 +689,14 @@ elif selected_page == "AI Assistant":
     st.title("💬 NovaTech AI Assistant")
 
     st.write(
-        "Ask questions about our services in English or Roman Urdu."
+        "Ask questions about NovaTech services in English or Roman Urdu."
     )
 
     api_key = st.text_input(
         "Gemini API key",
         type="password",
         value=os.environ.get("GEMINI_API_KEY", ""),
-        help="Your API key is used for AI responses. Keep it private.",
+        help="Keep your API key private.",
     )
 
     for role, message in st.session_state.chat_history:
@@ -669,18 +711,15 @@ elif selected_page == "AI Assistant":
         with st.chat_message("user"):
             st.write(prompt)
 
-        answer = ""
-
         if not GEMINI_AVAILABLE:
             answer = (
-                "The Gemini SDK is not installed. Run "
-                "`python -m pip install google-genai` "
-                "in your terminal."
+                "Gemini SDK install nahi hai. Terminal mein "
+                "python -m pip install google-genai run karein."
             )
 
         elif not api_key.strip():
             answer = (
-                "Enter your Gemini API key to enable live AI responses."
+                "Live AI response ke liye apni Gemini API key enter karein."
             )
 
         else:
@@ -691,10 +730,12 @@ elif selected_page == "AI Assistant":
                     model="gemini-2.5-flash",
                     contents=(
                         "You are the helpful assistant for NovaTech "
-                        "Solutions, a demo AI and software company. "
-                        "Respond in the language used by the user. "
+                        "Solutions, a demonstration AI and software "
+                        "company. Respond in the language used by "
+                        "the user, including Roman Urdu when appropriate. "
                         "Do not invent company achievements. "
-                        f"\n\nUser question: {prompt}"
+                        "If you do not know something, say so.\n\n"
+                        f"User question: {prompt}"
                     ),
                 )
 
@@ -703,11 +744,10 @@ elif selected_page == "AI Assistant":
                     or "The AI did not return a text response."
                 )
 
-            except Exception as error:
+            except Exception:
                 answer = (
-                    "Could not get an AI response. Check the API key, "
-                    "internet connection, model access and API quota. "
-                    f"Technical details: {error}"
+                    "AI response nahi mil saka. API key, internet "
+                    "connection, model access aur API quota check karein."
                 )
 
         st.session_state.chat_history.append(
@@ -717,19 +757,23 @@ elif selected_page == "AI Assistant":
         with st.chat_message("assistant"):
             st.write(answer)
 
-    if st.button("Clear Chat"):
-        st.session_state.chat_history = [
-            (
-                "assistant",
-                "Assalam-o-Alaikum! Welcome to NovaTech Solutions. "
-                "How can I help you today?",
-            )
-        ]
-        st.rerun()
+    st.button(
+        "Clear Chat",
+        key="clear_chat",
+        on_click=lambda: st.session_state.update(
+            chat_history=[
+                (
+                    "assistant",
+                    "Assalam-o-Alaikum! Welcome to NovaTech Solutions. "
+                    "How can I help you today?",
+                )
+            ]
+        ),
+    )
 
 
 # ============================================================
-# CLIENT DASHBOARD
+# 14. CLIENT DASHBOARD
 # ============================================================
 
 elif selected_page == "Client Dashboard":
@@ -766,16 +810,15 @@ elif selected_page == "Client Dashboard":
                 "No inquiries found. Submit one from Contact Us."
             )
 
-        
-st.button(
-    "Create a New Inquiry",
-    on_click=navigate,
-    args=("Contact Us",),
-)
+        st.button(
+            "Create a New Inquiry",
+            on_click=navigate,
+            args=("Contact Us",),
+        )
 
 
 # ============================================================
-# ADMIN DASHBOARD
+# 15. ADMIN DASHBOARD
 # ============================================================
 
 elif selected_page == "Admin Dashboard":
@@ -794,11 +837,11 @@ elif selected_page == "Admin Dashboard":
         inquiries = st.session_state.inquiries
         projects = st.session_state.projects
 
-        a, b, c = st.columns(3)
+        col1, col2, col3 = st.columns(3)
 
-        a.metric("Total Inquiries", len(inquiries))
-        b.metric("Portfolio Projects", len(projects))
-        c.metric("Services", len(SERVICES))
+        col1.metric("Total Inquiries", len(inquiries))
+        col2.metric("Portfolio Projects", len(projects))
+        col3.metric("Services", len(SERVICES))
 
         st.divider()
         st.subheader("Manage Inquiries")
@@ -820,8 +863,9 @@ elif selected_page == "Admin Dashboard":
                 st.write(
                     f"**#{inquiry['id']} — {inquiry['name']}**"
                 )
-                st.write(inquiry["email"])
-                st.write(inquiry["service"])
+                st.write(f"**Email:** {inquiry['email']}")
+                st.write(f"**Service:** {inquiry['service']}")
+                st.write(f"**Budget:** {inquiry['budget']}")
                 st.write(inquiry["description"])
 
                 current_status = inquiry.get(
@@ -832,14 +876,17 @@ elif selected_page == "Admin Dashboard":
                 if current_status not in statuses:
                     current_status = statuses[0]
 
-                new_status = st.selectbox(
+                st.selectbox(
                     "Inquiry status",
                     statuses,
                     index=statuses.index(current_status),
                     key=f"status_{inquiry['id']}",
+                    on_change=lambda inquiry_id=inquiry["id"]: None,
                 )
 
-                inquiry["status"] = new_status
+                inquiry["status"] = st.session_state[
+                    f"status_{inquiry['id']}"
+                ]
 
         st.divider()
         st.subheader("Add Portfolio Project")
@@ -871,11 +918,11 @@ elif selected_page == "Admin Dashboard":
             )
 
         if add_project:
+            clean_link = project_link.strip()
+
             valid_link = (
-                not project_link.strip()
-                or project_link.strip().startswith(
-                    ("https://", "http://")
-                )
+                not clean_link
+                or clean_link.startswith(("https://", "http://"))
             )
 
             if not project_title.strip():
@@ -893,7 +940,7 @@ elif selected_page == "Admin Dashboard":
                         "category": project_category,
                         "tech": project_tech.strip(),
                         "description": project_description.strip(),
-                        "link": project_link.strip(),
+                        "link": clean_link,
                     }
                 )
 
@@ -902,7 +949,7 @@ elif selected_page == "Admin Dashboard":
 
 
 # ============================================================
-# FOOTER
+# 16. FOOTER
 # ============================================================
 
 st.divider()
@@ -912,7 +959,9 @@ st.caption(
 )
 
 st.caption(
-    "Demo notice: this version stores data in session memory. "
-    "It does not yet have permanent database storage or production "
-    "grade authentication."
+    "Demo notice: inquiries, chat history and projects are stored "
+    "in session memory, not a permanent database. The demo login "
+    "is not production-grade authentication."
 )
+
+
