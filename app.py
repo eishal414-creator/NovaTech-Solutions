@@ -295,25 +295,7 @@ with st.sidebar:
     ]
 
 
-is_admin = (
-    isinstance(current_user, dict)
-    and current_user.get("role") == "admin"
-)
 
-visible_pages = [
-    page_name
-    for page_name in PAGES
-    if page_name != "Admin Dashboard" or is_admin
-]
-
-for page_name in visible_pages:
-    st.button(
-        page_name,
-        key=f"sidebar_{page_name}",
-        use_container_width=True,
-        on_click=navigate,
-        args=(page_name,),
-    )
 
     st.divider()
     st.caption("NovaTech Solutions demo application")
@@ -338,14 +320,14 @@ if (
     st.session_state.page_radio = "Home"
     st.session_state.page = "Home"
 
-st.radio(
+st.selectbox(
     "Navigate to a page",
     visible_pages,
     key="page_radio",
-    horizontal=True,
     label_visibility="collapsed",
     on_change=sync_page_from_radio,
 )
+
 
 selected_page = st.session_state.page_radio
 
