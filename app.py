@@ -62,11 +62,15 @@ st.markdown(
         margin-bottom: 12px;
     }
 
+    /* Password visibility icon color */
+    [data-testid="stTextInput"] button[aria-label*="Show"],
+    [data-testid="stTextInput"] button[aria-label*="Hide"] {
+        color: #f8fafc !important;
+    }
     </style>
     """,
     unsafe_allow_html=True,
 )
-
 
 # ============================================================
 # 3. PAGE DATA
