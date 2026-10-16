@@ -277,10 +277,32 @@ with st.sidebar:
             on_click=sign_out,
         )
 
+   
     st.divider()
     st.markdown("### Quick Navigation")
 
-   current_user = st.session_state.user
+    current_user = st.session_state.user
+
+    is_admin = (
+        isinstance(current_user, dict)
+        and current_user.get("role") == "admin"
+    )
+
+    visible_pages = [
+        page_name
+        for page_name in PAGES
+        if page_name != "Admin Dashboard" or is_admin
+    ]
+
+    for page_name in visible_pages:
+        st.button(
+            page_name,
+            key=f"sidebar_{page_name}",
+            use_container_width=True,
+            on_click=navigate,
+            args=(page_name,),
+        )
+
 
 is_admin = (
     isinstance(current_user, dict)
