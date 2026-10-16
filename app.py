@@ -294,15 +294,6 @@ with st.sidebar:
         if page_name != "Admin Dashboard" or is_admin
     ]
 
-    for page_name in visible_pages:
-        st.button(
-            page_name,
-            key=f"sidebar_{page_name}",
-            use_container_width=True,
-            on_click=navigate,
-            args=(page_name,),
-        )
-
 
 is_admin = (
     isinstance(current_user, dict)
