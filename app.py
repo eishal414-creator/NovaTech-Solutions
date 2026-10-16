@@ -164,7 +164,7 @@ defaults = {
     "chat_history": [
         (
             "assistant",
-            "Assalam-o-Alaikum! Welcome to NovaTech Solutions. "
+            "Hello! Welcome to NovaTech Solutions. "
             "How can I help you today?",
         )
     ],
