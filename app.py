@@ -225,19 +225,27 @@ with st.sidebar:
                 "Sign In",
                 use_container_width=True,
             )
-
         if login_submit:
             email = login_email.strip().lower()
 
+            try:
+                admin_email = st.secrets.get("ADMIN_EMAIL", "").strip().lower()
+                admin_password = st.secrets.get("ADMIN_PASSWORD", "")
+            except Exception:
+                admin_email = ""
+                admin_password = ""
+
             if (
-                email == "admin@novatech.com"
-                and login_password == "admin123"
+                admin_email
+                and admin_password
+                and email == admin_email
+                and login_password == admin_password
             ):
                 st.session_state.user = {
                     "email": email,
                     "role": "admin",
                 }
-                st.success("Demo admin signed in.")
+                st.success("Admin signed in successfully.")
                 st.rerun()
 
             elif (
@@ -255,11 +263,6 @@ with st.sidebar:
 
             else:
                 st.error("Enter a valid email and password.")
-
-        st.caption("Demo admin login:")
-        st.caption("admin@novatech.com")
-        st.caption("Password: admin123")
-
     else:
         st.write(
             f"Signed in: {st.session_state.user['email']}"
@@ -277,14 +280,27 @@ with st.sidebar:
     st.divider()
     st.markdown("### Quick Navigation")
 
-    for page_name in PAGES:
-        st.button(
-            page_name,
-            key=f"sidebar_{page_name}",
-            use_container_width=True,
-            on_click=navigate,
-            args=(page_name,),
-        )
+   current_user = st.session_state.user
+
+is_admin = (
+    isinstance(current_user, dict)
+    and current_user.get("role") == "admin"
+)
+
+visible_pages = [
+    page_name
+    for page_name in PAGES
+    if page_name != "Admin Dashboard" or is_admin
+]
+
+for page_name in visible_pages:
+    st.button(
+        page_name,
+        key=f"sidebar_{page_name}",
+        use_container_width=True,
+        on_click=navigate,
+        args=(page_name,),
+    )
 
     st.divider()
     st.caption("NovaTech Solutions demo application")
@@ -295,10 +311,23 @@ with st.sidebar:
 # ============================================================
 
 st.markdown("## 🚀 NovaTech Solutions")
+current_user = st.session_state.user
+
+is_admin = (
+    isinstance(current_user, dict)
+    and current_user.get("role") == "admin"
+)
+
+if (
+    st.session_state.page_radio == "Admin Dashboard"
+    and not is_admin
+):
+    st.session_state.page_radio = "Home"
+    st.session_state.page = "Home"
 
 st.radio(
     "Navigate to a page",
-    PAGES,
+    visible_pages,
     key="page_radio",
     horizontal=True,
     label_visibility="collapsed",
